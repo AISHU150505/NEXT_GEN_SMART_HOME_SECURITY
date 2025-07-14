@@ -1,2 +1,6 @@
+<<<<<<< HEAD
 # cip
  
+=======
+# NEXT_GEN_SMART_HOME_SECURITY
+>>>>>>> 685e8902b7f5722fa051488f40788368f6109c59
