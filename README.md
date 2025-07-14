@@ -114,10 +114,9 @@ Then navigate to `http://127.0.0.1:5000` in your browser.
 ---
 
 ## 👥 Authors
-- **Aishwarya S** – [Email](mailto:aishwaryasenthurpandian@gmail.com)  
-- **Kiruthiga P M** – [Email](mailto:pmkiruthiga17@gmail.com)  
-- **Christy Shawn Franco** – [Email](mailto:shawnfranco.christy@gmail.com)
-
+- **Aishwarya S**  
+- **Kiruthiga P M**  
+- **Christy Shawn Franco** 
 ## 📄 License
 This project is licensed for academic and research use only.
 
