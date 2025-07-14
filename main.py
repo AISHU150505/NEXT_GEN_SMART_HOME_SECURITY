@@ -1,0 +1,187 @@
+import cv2
+import motion_detector
+import face_recognition_system1 as face_recognition1
+import alert_system
+import time
+import os
+import torch
+import torchvision.transforms as transforms
+import torchvision.models as models
+from PIL import Image
+import shutil
+
+# Paths
+SUSPICIOUS_DIR = "recordings/suspicious_videos"
+RECORDINGS_DIR = "recordings"
+MODEL_PATH = r"C:\Users\pmkir\OneDrive\Desktop\project\final working project\model\models\resnet50_finetuned.pth"
+LOG_FILE = "logs/security_log.txt"
+
+# Ensure directories exist
+os.makedirs(SUSPICIOUS_DIR, exist_ok=True)
+os.makedirs(RECORDINGS_DIR, exist_ok=True)
+
+# Load Fine-Tuned ResNet50 Model
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = models.resnet50(pretrained=False)
+num_features = model.fc.in_features
+model.fc = torch.nn.Linear(num_features, 2)  
+model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+model.eval()
+model.to(device)
+
+# Transformations for Images
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+def log_event(message):
+    """ Log security events to a file. """
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = f"[{timestamp}] {message}\n"
+    #with open(LOG_FILE, "a") as log_file:
+       # log_file.write(log_entry)
+
+def extract_frames(video_path, output_folder):
+    """ Extract frames from a recorded video and save them as images. """
+    cap = cv2.VideoCapture(video_path)
+    count = 0
+    os.makedirs(output_folder, exist_ok=True)
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame_path = os.path.join(output_folder, f"frame_{count:04d}.png")
+        cv2.imwrite(frame_path, frame)
+        count += 1
+
+    cap.release()
+    return output_folder  # Return the frame folder path
+
+def classify_video(frame_folder, video_path):
+    """ Classify frames and determine if the video is suspicious. """
+    print(f"\n[INFO] Classifying video: {frame_folder}")
+    log_event(f"Classifying video: {video_path}")
+    suspicious_count = 0
+    total_frames = 0
+
+    for img_name in sorted(os.listdir(frame_folder)):  
+        img_path = os.path.join(frame_folder, img_name)
+        try:
+            img = Image.open(img_path).convert("RGB")
+            img_tensor = transform(img).unsqueeze(0).to(device)
+
+            with torch.no_grad():
+                outputs = model(img_tensor)
+                _, predicted = torch.max(outputs, 1)
+
+            label = "Suspicious" if predicted.item() == 1 else "Not Suspicious"
+            print(f"Frame {total_frames + 1}: {label}")
+
+            if predicted.item() == 1:
+                suspicious_count += 1
+            total_frames += 1
+
+        except Exception as e:
+            print(f"[WARNING] Skipping corrupted image: {img_path} ({str(e)})")
+
+    # Decide if the video is suspicious
+    final_label = "Suspicious" if suspicious_count / max(total_frames, 1) > 0.55 else "Not Suspicious"
+    print(f"Classified as {final_label}")
+    log_event(f"Classified as {final_label}")
+
+    if final_label == "Suspicious":
+        shutil.move(video_path, os.path.join(SUSPICIOUS_DIR, os.path.basename(video_path)))
+        print(f"⚠️ Video moved to suspicious_videos!")
+        #log_event(f"⚠️ Video moved to suspicious_videos!")
+
+def main():
+    cap = cv2.VideoCapture(0)
+    first_frame = None
+    recording = False
+    video_writer = None
+    video_filename = ""
+    motion_counter = 0
+    recording_start_time = None
+
+    frame_width = int(cap.get(3))
+    frame_height = int(cap.get(4))
+    fps = 30
+
+    os.makedirs("logs", exist_ok=True)
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            first_frame, frame, motion_detected = motion_detector.detect_motion(frame, first_frame)
+
+            if motion_detected:
+                motion_counter = 0
+                frame, detected_names = face_recognition1.recognize_faces(frame)
+
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                log_entry = f"[{timestamp}] Detected: {', '.join(detected_names) if detected_names else 'Motion detected but no faces recognized'}\n"
+
+                with open("logs/security_log.txt", "a") as log_file:
+                    log_file.write(log_entry)
+
+                if "Unknown" in detected_names:
+                    alert_system.send_alert("Unknown")
+
+                    if not recording:
+                        recording = True
+                        recording_start_time = time.time()
+                        timestamp = time.strftime("%Y%m%d-%H%M%S")
+                        video_filename = os.path.join(RECORDINGS_DIR, f"intruder_{timestamp}.avi")
+                        print(f"Starting recording: {video_filename}")
+                        fourcc = cv2.VideoWriter_fourcc(*"XVID")
+                        video_writer = cv2.VideoWriter(video_filename, fourcc, fps, (frame_width, frame_height))
+
+            else:
+                if recording:
+                    motion_counter += 1
+                    if motion_counter > 30 or (recording_start_time and time.time() - recording_start_time >= 120):
+                        recording = False
+                        if video_writer:
+                            video_writer.release()
+                            video_writer = None
+                            print(f"Recording saved: {video_filename}")
+
+                            # Extract frames and classify the video
+                            video_name = os.path.splitext(os.path.basename(video_filename))[0]
+                            frame_folder = os.path.join(RECORDINGS_DIR, video_name)
+                            extracted_folder = extract_frames(video_filename, frame_folder)
+                            print(f"classifying video {video_filename}",)
+                            classify_video(extracted_folder, video_filename)
+
+
+                        motion_counter = 0
+                        recording_start_time = None
+
+            if recording and video_writer:
+                video_writer.write(frame)
+
+            cv2.imshow("Smart Security System", frame)
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+            if cv2.getWindowProperty("Smart Security System", cv2.WND_PROP_VISIBLE) < 1:
+                break
+
+    except KeyboardInterrupt:
+        print("\n[INFO] Program interrupted safely. Exiting...")
+
+    finally:
+        print("[INFO] Releasing resources...")
+        cap.release()
+        if video_writer:
+            video_writer.release()
+        cv2.destroyAllWindows()
+        print("[INFO] Program exited successfully.")
+
+if __name__ == "__main__":
+    main()

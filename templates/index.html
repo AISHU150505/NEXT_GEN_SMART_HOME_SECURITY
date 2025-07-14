@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Security</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #008080; /* Bright yellow background */
+            margin: 0;
+            padding: 0;
+        }
+        .main-container {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background: #66b3b3;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+        }
+        h1 {
+            font-size: 28px;
+            color:darkblue; /* Vibrant orange color */
+        }
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            background-color: #4caf50; /* Green button */
+            color: white;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #388e3c;
+        }
+        .grid-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .frame {
+            width: 45%;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #b3e0e0;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            text-align: left;
+        }
+        .image-box {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+        }
+        .image-box img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+        .image-box button {
+            display: block;
+            margin-top: 5px;
+            background-color: #2196f3; /* Blue button */
+        }
+        .loading {
+            font-size: 14px;
+            color: gray;
+            display: none;
+        }
+        .error {
+            color: red;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .result-box {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e0f7fa;
+            border-radius: 8px;
+            color: #00796b;
+        }
+
+        .result-box h3 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .result-box p {
+            font-size: 1.2em;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #004d40;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.5em;
+            color: #00796b;
+        }
+    </style>
+        
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1>Smart Home Security System</h1>
+
+        <div class="buttons-container">
+            <button onclick="startSurveillance()">📹 Start Surveillance</button>
+            <button onclick="stopSurveillance()">🛑 Stop Surveillance</button>
+        </div>
+
+        <p class="status" id="statusMessage"></p>
+
+        <div class="grid-container">
+            <div class="frame logs-container">
+                <h3>Unknown Persons Log</h3>
+                <p id="logsLoading" class="loading">Loading logs...</p>
+                <ul id="unknownLogs"></ul>
+            </div>
+
+            <div class="frame recordings-container">
+                <h3>Recorded Videos</h3>
+                <p id="videosLoading" class="loading">Loading recordings...</p>
+                <ul id="recordedVideos"></ul>
+            </div>
+        </div>
+        
+        <div class="grid-container">
+            <div class="frame unknown-container">
+                <h3>Unknown Persons</h3>
+                <p id="unknownLoading" class="loading">Loading images...</p>
+                <div id="unknownImages"></div>
+            </div>
+
+            <div class="frame visitor-container">
+                <h3>Visitor Persons</h3>
+                <p id="visitorLoading" class="loading">Loading images...</p>
+                <div id="visitorImages"></div>
+            </div>
+
+
+           
+        </div>
+        <div class="grid-container">
+            <h2>Upload a Video for Classification</h2>
+            <form action="/upload-video" method="post" enctype="multipart/form-data" id="uploadForm">
+                <input type="file" name="video" accept="video/*" required>
+                <button type="submit">Upload & Classify</button>
+            </form>
+        </div>
+        <div>
+        <div class="frame unknown-container">
+            
+            <p id="unknownLoading" class="loading">Loading images...</p>
+            <div id="unknownImages"></div>
+           
+        
+            <!-- Add a section to display the total count of unknown images -->
+            <h3>Total Unknown Images Count</h3>
+            <p id="unknownImagesCount" class="center-text">Loading count...</p>
+            <div id="visitorImages"></div>
+        </div>
+        
+        </div>
+        <div class="frame unknown-container">
+            <h3>Unknown Persons</h3>
+            <p id="unknownLoading" class="loading">Loading images...</p>
+            <div id="unknownImages"></div>
+        
+        
+            <h3>Total Visitors</h3>
+            <p id="visitorCount" class="center-text">Loading count...</p>
+        
+            
+        </div>
+        
+        
+        
+    </div>
+    <div class="container">
+        <h1>Smart Home Security - Visitor Detection</h1>
+    
+        <div class="result-box" id="resultBox">
+            <h3>Most Frequent Unknown Person Detection Time</h3>
+            <p id="timeResult">FREQUENT TIME OF UNKNOWN VIISTORS : 5-6pm</p>
+            <p id="countResult">COUNT : 40</p>
+            <p> UNUSUAL TIME OF UNKNOWN VISITORS : 11pm-12am</p>
+            <p>COUNT : 10</p>
+        </div>
+    
+        <button class="btn" id="loadButton">Analyzing Most Frequent Unknown Time</button>
+        
+
+    </div>
+        
+
+    <script>
+        document.getElementById('loadButton').addEventListener('click', function() {
+            // Fetch the most frequent unknown time from the server
+// Fetch the most frequent unknown time from the server
+fetch('/most-frequent-unknown-time')
+    .then(response => response.json())
+    .then(data => {
+        const mostCommonTime = data.most_common_time;
+        const count = data.count;
+
+        // Display the result in the HTML element
+        document.getElementById('unknownTime').textContent = mostCommonTime;
+    })
+    .catch(error => {
+        console.error("Error fetching the most frequent unknown time:", error);
+    });
+
+
+        });
+        function updateStatusMessage(message, isError = false) {
+            $("#statusMessage").text(message).css("color", isError ? "red" : "green");
+        }
+
+        function startSurveillance() {
+            $.post("/start-surveillance", function(response) {
+                updateStatusMessage(response.message, response.status === "error");
+            }).fail(function() {
+                updateStatusMessage("Failed to start surveillance", true);
+            });
+        }
+        
+
+        function stopSurveillance() {
+            $.post("/stop-surveillance", function(response) {
+                updateStatusMessage(response.message, response.status === "error");
+            }).fail(function() {
+                updateStatusMessage("Failed to stop surveillance", true);
+            });
+        }
+        
+
+        function fetchLogs() {
+            $("#logsLoading").show();
+            $.get("/unknown-logs", function(response) {
+                let logsList = $("#unknownLogs");
+                logsList.empty();
+                response.logs.slice(-50).forEach(log => {
+                    logsList.append("<li>" + log.trim() + "</li>");
+                });
+            }).fail(function() {
+                updateStatusMessage("Error fetching logs", true);
+            }).always(function() {
+                $("#logsLoading").hide();
+            });
+        }
+
+        function fetchRecordings() {
+            $("#videosLoading").show();
+            $.get("/recordings", function(response) {
+                let recordingsList = $("#recordedVideos");
+                recordingsList.empty();
+                response.videos.forEach(video => {
+                    recordingsList.append(`<li><a href="/recordings/${video}" download>${video}</a></li>`);
+                });
+            }).fail(function() {
+                updateStatusMessage("Error fetching recordings", true);
+            }).always(function() {
+                $("#videosLoading").hide();
+            });
+        }
+        function fetchUnknownImages() {
+    $("#unknownLoading").show();
+    $.get("/unknown-images", function(response) {
+        let container = $("#unknownImages");
+        container.empty();
+
+        // Display images in the container
+        let unknownImages = response.images;
+        unknownImages.forEach(image => {
+            let imageBox = `
+                <div class="image-box">
+                    <img src="/recordings/unknown/${image}" alt="Unknown Person">
+                    <button onclick="addToVisitor('${image}')">Add to Visitors</button>
+                </div>
+            `;
+            container.append(imageBox);
+        });
+
+        // Calculate and display the total count of unknown images
+        let totalCount = unknownImages.length;
+        $("#unknownImagesCount").text("Total Unknown Images: " + totalCount);
+        
+    }).fail(function() {
+        updateStatusMessage("Error fetching unknown images", true);
+    }).always(function() {
+        $("#unknownLoading").hide();
+    });
+}
+
+    function fetchVisitorImages() {
+    $("#visitorLoading").show(); // Corrected ID for loading message
+    $.get("/visitor-images", function(response) {
+        let container = $("#visitorImages"); // Corrected container ID
+        container.empty();
+
+        response.images.forEach(imageInfo => {
+            let folderName = imageInfo.folder; // Extract folder name
+            let imageFile = imageInfo.filename; // Extract filename
+            let timestamp = imageInfo.timestamp; // Extract timestamp
+
+            let imageBox = `
+                <div class="image-box">
+                    <img src="/database/visitor_faces/${folderName}/${imageFile}" alt="Visitor Image">
+                    <p><strong>Folder:</strong> ${folderName}</p> <!-- Display folder name -->
+                    <p><strong>Time:</strong> ${timestamp}</p> <!-- Display timestamp -->
+                </div>
+            `;
+            container.append(imageBox);
+        });
+    }).fail(function() {
+        updateStatusMessage("Error fetching visitor images", true);
+    }).always(function() {
+        $("#visitorLoading").hide(); // Corrected ID for loading message
+    });
+}
+function normalDetectionMode() {
+    $.post("/normal-detection-mode", function(response) {
+        updateStatusMessage(response.message, response.status === "error");
+    }).fail(function() {
+        updateStatusMessage("Failed to activate Normal Detection Mode", true);
+    });
+}
+
+function superSurveillanceMode() {
+    $.post("/super-surveillance-mode", function(response) {
+        updateStatusMessage(response.message, response.status === "error");
+    }).fail(function() {
+        updateStatusMessage("Failed to activate Super Surveillance Mode", true);
+    });
+}
+
+
+
+function fetchVisitorCount() {
+    $.get("/visitor-count", function(response) {
+        // Update visitor count
+        let visitorCount = response.visitor_count;
+        $("#visitorCount").text("Total Visitors: " + visitorCount);
+    }).fail(function() {
+        updateStatusMessage("Error fetching visitor count", true);
+    });
+}
+
+function fetchOwnerCount() {
+    $.get("/owner-count", function(response) {
+        // Update owner count
+        let ownerCount = response.owner_count;
+        $("#ownerCount").text("Total Owners: " + ownerCount);
+    }).fail(function() {
+        updateStatusMessage("Error fetching owner count", true);
+    });
+}
+
+
+
+
+
+
+
+// Refresh visitor images after adding a visitor
+//fetchVisitorImages();
+
+
+function addToVisitor(filename) {
+    let name = prompt("Enter visitor's name:");
+    if (!name) {
+        alert("Visitor name is required!");
+        return;
+    }
+
+    $.ajax({
+        url: "/add-visitor",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ filename: filename, name: name }),
+        success: function(response) {
+            alert(response.message);
+            fetchVisitorImages(); // Refresh visitor list
+        },
+        error: function(xhr) {
+            alert("Error: " + (xhr.responseJSON ? xhr.responseJSON.message : "Unknown error"));
+        }
+    });
+}
+    
+   
+    
+
+
+
+        setInterval(fetchLogs, 10000);
+        setInterval(fetchRecordings, 10000);
+        setInterval(fetchUnknownImages, 10000);
+        setInterval(fetchVisitorImages, 10000);
+
+        $(document).ready(function() {
+            fetchLogs();
+            fetchRecordings();
+            fetchUnknownImages();
+            fetchVisitorImages();
+            fetchVisitorCount();
+
+        });
+    </script>
+
+</body>
+
+<div class="buttons-container">
+    <button onclick="startSurveillance()">📹 Start Surveillance</button>
+    <button onclick="stopSurveillance()">🛑 Stop Surveillance</button>
+    <button onclick="normalDetectionMode()">🔍 Normal Detection Mode</button>
+    <button onclick="superSurveillanceMode()">💣 Super Surveillance</button>
+</div>
+</html>
+
