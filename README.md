@@ -121,5 +121,5 @@ Then navigate to `http://127.0.0.1:5000` in your browser.
 This project is licensed for academic and research use only.
 
 ## 📚 References
-- UCF-Crime Dataset: [https://www.crcv.ucf.edu/research/projects/ucf-crime](https://www.crcv.ucf.edu/research/projects/ucf-crime)
+- UCF-Crime Dataset: [https://www.kaggle.com/datasets/odins0n/ucf-crime-dataset](https://www.kaggle.com/datasets/odins0n/ucf-crime-dataset)
 - Related Work: IJMTST, Electronics, IDCIoT, ICDICI papers
