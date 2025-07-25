@@ -121,4 +121,3 @@ Then navigate to `http://127.0.0.1:5000` in your browser.
 
 ## References
 - UCF-Crime Dataset: [https://www.kaggle.com/datasets/odins0n/ucf-crime-dataset](https://www.kaggle.com/datasets/odins0n/ucf-crime-dataset)
-- Related Work: IJMTST, Electronics, IDCIoT, ICDICI papers
